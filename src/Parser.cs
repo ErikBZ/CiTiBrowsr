@@ -11,7 +11,6 @@ namespace ToyBrowser.src
 {
     public class Parser
     {
-        Dom.Node head;
         uint pos;
         string input;
 
@@ -38,7 +37,6 @@ namespace ToyBrowser.src
 
         public Parser()
         {
-            head = null;
             pos = 0;
             input = "";
         }

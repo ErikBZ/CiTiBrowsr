@@ -43,6 +43,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\CSSManager.cs" />
     <Compile Include="src\Dom.cs" />
     <Compile Include="src\Parser.cs" />
   </ItemGroup>
