@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 /// <summary>
@@ -14,11 +15,53 @@ namespace ToyBrowser.src
         uint pos;
         string input;
 
+        
+        static int Main(string[] args)
+        {
+            string path = @"..\..\examples\test_one.html";
+            string toParse = "<html></html>";
+            if(File.Exists(path))
+            {
+                toParse = File.ReadAllText(path);
+            }
+
+            Parser parser = new Parser();
+            parser.pos = 0;
+            parser.input = toParse;
+            Dom.Node html = parser.parseElement();
+            Console.Write(html);
+            Console.Read();
+
+            // program exited properly
+            return 0;
+        }
+
         public Parser()
         {
-            //
-            // TODO: Add constructor logic here
-            //
+            head = null;
+            pos = 0;
+            input = "";
+        }
+
+        public Parser(uint pos, string input)
+        {
+            this.pos = pos;
+            this.input = input;
+        }
+
+        /// <summary>
+        /// Parses an entire HTML file
+        /// </summary>
+        /// <param name="input">Input is the HTML file as a string</param>
+        /// <returns>Returns a head for the DOM data struct tree</returns>
+        internal Dom.Node parseHTML(string input)
+        {
+            Parser parser = new Parser(0, input);
+            Dom.Node[] nodes = parser.parseChildren();
+            if (nodes.Length == 1)
+                return nodes[0];
+            else
+                return Dom.createElement("html", new Dictionary<string, string>(), nodes);
         }
 
         // returns character at position
@@ -26,15 +69,16 @@ namespace ToyBrowser.src
         {
             if (endOfFile())
             {
-                throw new Exception("Position is greater than length of input string");
+                throw new Exception(String.Format("Position {0} is greater than length {1} of input string", pos, input.Length));
             }
             return input[(int)pos];
         }
 
         // checks if input string starts with string s
-        private bool startWith(string s)
+        private bool startsWith(string s)
         {
-            return input.StartsWith(s);
+            string restOfInput = input.Substring((int)pos);
+            return restOfInput.StartsWith(s);
         }
 
         // checks to see if we've reached the end of the input string
@@ -70,11 +114,15 @@ namespace ToyBrowser.src
         private string parseTagName()
         {
             StringBuilder strBuilder = new StringBuilder();
-            while (!endOfFile() && (Char.IsLetterOrDigit(nextChar())))
-                strBuilder.Append(nextChar());
+            while (!endOfFile() && (Char.IsLetterOrDigit(nextChar()) || nextChar() == '.'))
+                strBuilder.Append(consumeChar());
             return strBuilder.ToString();
         }
 
+        /// <summary>
+        /// chooses which type of Node to parse, Element or Text and calls the correct method
+        /// </summary>
+        /// <returns>Returns Node of the corerct type</returns>
         private Dom.Node parseNode()
         {
             Dom.Node thing;
@@ -86,17 +134,25 @@ namespace ToyBrowser.src
             return thing;
         }
 
+        /// <summary>
+        /// Parses a single element and then its children. This is a recursive method the recursion being
+        /// parseElement -> parseChildren -> parseElement et cetera
+        /// Also i don't know if i'm handling the exceptions correctly with my ghetto asserts
+        /// this is probably a bad way to do it
+        /// </summary>
+        /// <returns>Returns a sub tree of the DOM struct</returns>
         private Dom.Node parseElement()
         {
+            string tag = "";
+            Dictionary<string, string> attr = new Dictionary<string, string>();
             // starting the tag handling
             assert(consumeChar(), '<');
-            String tag = parseTagName();
-            ///TODO parse attirbutes
-            Dictionary<string, string> attr = parseAttributes();
+            tag = parseTagName();
+            attr = parseAttributes();
             assert(consumeChar(), '>');
 
             /// TODO get the children of the node
-            Dom.Node[] children = null;
+            Dom.Node[] children = parseChildren();
 
             // closing the tag
             assert(consumeChar(), '<');
@@ -105,6 +161,25 @@ namespace ToyBrowser.src
             assert(consumeChar(), '>');
 
             return Dom.createElement(tag, attr, children);
+        }
+
+        /// <summary>
+        /// parses nodes which are in the same level as each other. Uses a queue to add new DomNodes and then 
+        /// converts it into an array
+        /// </summary>
+        /// <returns>Sibling nodes</returns>
+        private Dom.Node[] parseChildren()
+        {
+            Queue<Dom.Node> domNodeQueue = new Queue<Dom.Node>();
+
+            // need to make sure the next char will be non whitespace
+            consumeWhitespace();
+            while (!endOfFile() && !startsWith("</"))
+            {
+                domNodeQueue.Enqueue(parseNode());
+                consumeWhitespace();
+            }
+            return domNodeQueue.ToArray();
         }
 
         private Dom.Node parseText()
@@ -174,7 +249,7 @@ namespace ToyBrowser.src
 
         private bool assert(string x, string y)
         {
-            if (x.Equals(y))
+            if (!x.Equals(y))
                 throw new Exception(String.Format("Assertion {0} == {1} failed.", x, y));
             return true;
         }

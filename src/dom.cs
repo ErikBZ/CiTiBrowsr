@@ -17,7 +17,7 @@ namespace ToyBrowser.src
             Text, Element
         };
 
-        public class Node
+        internal class Node
         {
             protected NodeType nodeType;
 
@@ -74,6 +74,15 @@ namespace ToyBrowser.src
                     strBuilder.Append("<");
                     strBuilder.Append(tag);
                     // add in attributes here later
+                    foreach(KeyValuePair<string, string> kvp in attributes)
+                    {
+                        strBuilder.Append(' ');
+                        strBuilder.Append(kvp.Key);
+                        strBuilder.Append('=');
+                        strBuilder.Append('"');
+                        strBuilder.Append(kvp.Value);
+                        strBuilder.Append('"');
+                    }
                     strBuilder.Append(">");
 
                     closer.Append("\n");
