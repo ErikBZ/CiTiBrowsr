@@ -237,6 +237,43 @@ namespace ToyBrowser.src
             return attrValue;
         }
 
+        // parsing CSS now
+        public CSSManager.SimpleSelector parseSimpleSelector()
+        {
+            CSSManager.SimpleSelector selector = new CSSManager.SimpleSelector();
+            while(!endOfFile())
+            {
+                if (nextChar() == '#')
+                {
+                    consumeChar();
+                    
+                }
+                else if (nextChar() == '.')
+                {
+                    consumeChar();
+
+                }
+                else if (nextChar() == '*')
+                {
+                    consumeChar();
+
+                }
+                else if(validIdentifierChar(nextChar()))
+                {
+                
+                }
+            }
+            return selector;
+        }
+
+        private bool validIdentifierChar(char c)
+        {
+            bool valid = false;
+            if (Char.IsLetter(c))
+                valid = true;
+            return valid;
+        }
+
         // checks to see if chars are equal
         private bool assert(char x, char y)
         {

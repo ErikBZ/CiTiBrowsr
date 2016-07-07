@@ -8,7 +8,7 @@ namespace ToyBrowser.src
     public class CSSManager
     {
 
-        struct SimpleSelector
+        public struct SimpleSelector
         {
             string tagName;
             string id;
