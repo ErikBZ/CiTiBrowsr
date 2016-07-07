@@ -15,25 +15,25 @@ namespace ToyBrowser.src
         string input;
 
         
-        static int Main(string[] args)
-        {
-            string path = @"..\..\examples\test_one.html";
-            string toParse = "<html></html>";
-            if(File.Exists(path))
-            {
-                toParse = File.ReadAllText(path);
-            }
+        //static int Main(string[] args)
+        //{
+        //    string path = @"..\..\examples\test_one.html";
+        //    string toParse = "<html></html>";
+        //    if(File.Exists(path))
+        //    {
+        //        toParse = File.ReadAllText(path);
+        //    }
 
-            Parser parser = new Parser();
-            parser.pos = 0;
-            parser.input = toParse;
-            Dom.Node html = parser.parseElement();
-            Console.Write(html);
-            Console.Read();
+        //    Parser parser = new Parser();
+        //    parser.pos = 0;
+        //    parser.input = toParse;
+        //    Dom.Node html = parser.parseElement();
+        //    Console.Write(html);
+        //    Console.Read();
 
-            // program exited properly
-            return 0;
-        }
+        //    // program exited properly
+        //    return 0;
+        //}
 
         public Parser()
         {
@@ -237,34 +237,90 @@ namespace ToyBrowser.src
             return attrValue;
         }
 
-        // parsing CSS now
-        public CSSManager.SimpleSelector parseSimpleSelector()
+        /// <summary>
+        /// Parses a single line as a declaration in a CSS file
+        /// </summary>
+        /// <returns></returns>
+        private CSSManager.Declaration parseDeclaration()
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            CSSManager.Declaration decl = new CSSManager.Declaration();
+
+            // parseing it here
+            // declaration grammar is such that [a-zA-Z-_]*
+            // basically an identifier
+            consumeWhitespace();
+            decl.name = parseIdentifier();
+            assert(consumeChar(), ':');
+            // parse Value
+
+            return decl;
+        }
+
+        /// <summary>
+        /// Parses the selector section of a CSS file also does so
+        /// very terribly.
+        /// </summary>
+        /// <TODO>
+        /// Add error checking so that garabage selectors get thrown out or are
+        /// properly communitcated to the user
+        /// </TODO>
+        /// <returns>A single simple selector with all its values parsed from a CSS file</returns>
+        private CSSManager.SimpleSelector parseSimpleSelector()
         {
             CSSManager.SimpleSelector selector = new CSSManager.SimpleSelector();
-            while(!endOfFile())
+            // set selector.classes to this after everything is done
+            Queue<string> classQue = new Queue<string>();
+            bool keepEating = true;                         // gets set to false when there is nothing left to parse for the selector
+
+            while(!endOfFile() && keepEating)
             {
-                if (nextChar() == '#')
+                if (nextChar() == '#')                      // parse ID
                 {
                     consumeChar();
-                    
+                    selector.id = parseIdentifier();   
                 }
-                else if (nextChar() == '.')
+                else if (nextChar() == '.')                 // parse a class and enqueue to classQue
+                {
+                    consumeChar();
+                    classQue.Enqueue(parseIdentifier());
+                }
+                else if (nextChar() == '*')                 // don't do anything and move on
                 {
                     consumeChar();
 
                 }
-                else if (nextChar() == '*')
+                else if(validIdentifierChar(nextChar()))    // parse the Tag Name
                 {
-                    consumeChar();
-
+                    selector.tagName = parseIdentifier();
                 }
-                else if(validIdentifierChar(nextChar()))
+                else
                 {
-                
+                    keepEating = false;
                 }
             }
+            selector.classes = classQue.ToArray();
             return selector;
         }
+
+        /// <summary> 
+        /// parsing an identifier
+        /// identifiers can start with '-' or '_' and have them in the name as well
+        /// the grammar as follows -?[_a-zA-Z]+[_a-zA-Z0-9-]*
+        /// if it starts with - then the second char MUST be an alpha.
+        /// </summary>
+        /// <returns>Returns a valid selector name</returns>
+        private string parseIdentifier()
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            while(!endOfFile() && (Char.IsLetterOrDigit(nextChar())||nextChar() == '-'||nextChar() == '_'))
+            {
+                strBuilder.Append(consumeChar());
+            }
+            return strBuilder.ToString();
+        }
+
+        
 
         private bool validIdentifierChar(char c)
         {

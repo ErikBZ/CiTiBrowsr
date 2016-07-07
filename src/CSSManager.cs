@@ -8,23 +8,38 @@ namespace ToyBrowser.src
     public class CSSManager
     {
 
+        public struct Systelsheet
+        {
+            Rule[] rules;
+        }
+
+        public struct Rule
+        {
+            SimpleSelector[] selectors;
+            Declaration[] declarations;
+        }
+
         public struct SimpleSelector
         {
-            string tagName;
-            string id;
-            string[] classes;
+            public string tagName;
+            public string id;
+            public string[] classes;
         }
-        struct Declaration
+
+        /// <summary>
+        /// Keeps track of a selectors declarations 
+        /// </summary>
+        public struct Declaration
         {
-            string name;
-            Value value;
+            public string name;
+            public Value value;
         }
 
         /// <summary>
         /// Tracks a declaration's value
         /// Some more functionality may be added later on, probably not though.
         /// </summary>
-        struct Value
+        public struct Value
         {
             ValueType type;
 
@@ -43,7 +58,7 @@ namespace ToyBrowser.src
         /// Will be used for error checking to make sure Value has a certain
         /// variable tracked
         /// </summary>
-        enum ValueType
+        public enum ValueType
         {
             Keyword,
             Length,
@@ -53,7 +68,7 @@ namespace ToyBrowser.src
         /// <summary>
         /// Enum for the type of unit that a value might be like px or p
         /// </summary>
-        enum Unit
+        public enum Unit
         {
             Px,
             // add more units later 
@@ -63,9 +78,23 @@ namespace ToyBrowser.src
         /// Struct that keep track of a Values color
         /// uses 4 unisgned bytes for Red, Green, Blue and Alpha
         /// </summary>
-        struct Color
+        public struct Color
         {
             byte r, g, b, a;
+        }
+
+        public struct Specificity
+        {
+            public uint most;
+            public uint med;
+            public uint least;
+
+            public Specificity(SimpleSelector x)
+            {
+                this.least = (uint)x.tagName.Length;
+                this.med = (uint)x.classes.Length;
+                this.most = (uint)x.id.Length;
+            }
         }
 
         public CSSManager()

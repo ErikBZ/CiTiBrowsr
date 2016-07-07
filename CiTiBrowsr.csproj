@@ -34,6 +34,12 @@
     <RootNamespace>Toy_Browser</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CalithaLib">
+      <HintPath>libs\CalithaLib.dll</HintPath>
+    </Reference>
+    <Reference Include="GoldParserEngine">
+      <HintPath>libs\GoldParserEngine.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,6 +52,7 @@
     <Compile Include="src\CSSManager.cs" />
     <Compile Include="src\Dom.cs" />
     <Compile Include="src\Parser.cs" />
+    <Compile Include="src\TestingGold.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>
