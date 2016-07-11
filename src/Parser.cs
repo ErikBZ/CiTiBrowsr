@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 /// <summary>
 /// Parses HTML into a DOM object
@@ -14,26 +15,27 @@ namespace ToyBrowser.src
         uint pos;
         string input;
 
-        
-        //static int Main(string[] args)
-        //{
-        //    string path = @"..\..\examples\test_one.html";
-        //    string toParse = "<html></html>";
-        //    if(File.Exists(path))
-        //    {
-        //        toParse = File.ReadAllText(path);
-        //    }
 
-        //    Parser parser = new Parser();
-        //    parser.pos = 0;
-        //    parser.input = toParse;
-        //    Dom.Node html = parser.parseElement();
-        //    Console.Write(html);
-        //    Console.Read();
+        static int Main(string[] args)
+        {
+            //string path = @"..\..\examples\test_one.html";
+            //string toParse = "<html></html>";
+            //if (File.Exists(path))
+            //{
+            //    toParse = File.ReadAllText(path);
+            //}
 
-        //    // program exited properly
-        //    return 0;
-        //}
+            Parser parser = new Parser();
+            parser.pos = 0;
+            parser.input = "343.009";
+            float num = parser.parseStringToFloat();
+            num = num + 5;
+            Console.Write(num);
+            Console.Read();
+
+            // program exited properly
+            return 0;
+        }
 
         public Parser()
         {
@@ -60,6 +62,15 @@ namespace ToyBrowser.src
                 return nodes[0];
             else
                 return Dom.createElement("html", new Dictionary<string, string>(), nodes);
+        }
+
+        // consumes an x amount of characters
+        private void consumeSomeChars(int x)
+        {
+            for(int i=0;i< x;i++)
+            {
+                consumeChar();
+            }
         }
 
         // returns character at position
@@ -215,7 +226,7 @@ namespace ToyBrowser.src
         }
 
         /// <summary>
-        /// called after consuming whitespace after parsing a tag or a compelte attribute dictionary entry
+        /// called after consuming whitespace after parsing a tag or a compelete attribute dictionary entry
         /// </summary>
         /// <returns>The name of the attribute</returns>
         private string parseAttrName()
@@ -256,6 +267,112 @@ namespace ToyBrowser.src
 
             return decl;
         }
+
+        private CSSManager.Value parseValue()
+        {
+            CSSManager.Value val = new CSSManager.Value();
+
+            if (Char.IsDigit(nextChar()))
+            {
+                val.type = CSSManager.ValueType.Length;
+                val.len = parseStringToFloat();
+                consumeWhitespace();
+                val.unit = parseUnit();
+            }
+            else if(Char.IsLetter(nextChar()))
+            {
+                val.type = CSSManager.ValueType.Keyword;
+                val.keyword = parseIdentifier();
+            }
+            else if(nextChar() == '#')
+            {
+                val.color = parseColor();
+                val.type = CSSManager.ValueType.Color;
+            }
+            else
+            {
+                throw new Exception(String.Format("Value {0} cannot be the beginning of a value.\n", nextChar()));
+            }
+            return val;
+        }
+
+        /// <summary>
+        /// parses a part of string that has a grammer consisitng of 
+        /// [0-9]*.?[0-9]* and returns it as a float
+        /// </summary>
+        /// <returns>A float parsed from a string</returns>
+        private float parseStringToFloat()
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            float flo = 0;
+            strBuilder.Append(parseNumbers());
+            if (!endOfFile() && nextChar() == '.')
+            {
+                strBuilder.Append(consumeChar());
+                strBuilder.Append(parseNumbers());
+            }
+            flo = (float)Double.Parse(strBuilder.ToString());
+            return flo;
+        }
+
+        private CSSManager.Unit parseUnit()
+        {
+            CSSManager.Unit u = CSSManager.Unit.Px;
+            if (startsWith("px"))
+            {
+                consumeSomeChars(2);
+                u = CSSManager.Unit.Px;
+            }
+            else if(startsWith("p"))
+            {
+                consumeSomeChars(1);
+                u = CSSManager.Unit.P;
+            }
+            return u;
+        }
+
+        // returns a section of string that is only numbers
+        private string parseNumbers()
+        {
+            StringBuilder strBuilder = new StringBuilder();
+
+            while(!endOfFile() && Char.IsDigit(nextChar()))
+            {
+                strBuilder.Append(consumeChar());
+            }
+            return strBuilder.ToString();
+        }
+
+        /// <summary>
+        /// Parses a colors for a css value
+        /// </summary>
+        /// <returns></returns>
+        private CSSManager.Color parseColor()
+        {
+            assert(consumeChar(), '#');
+            CSSManager.Color col = new CSSManager.Color();
+            string hexColor = parseIdentifier();
+            Console.Write(hexColor + "\n");
+
+            byte[] rgb = stringToByteArray(hexColor);
+            col.r = rgb[0];     // first byte is red
+            col.g = rgb[1];     // second byte is green
+            col.b = rgb[2];     // thrid byte is blue
+            col.a = 255;        // aplha
+
+            return col;
+        }
+      
+        /// <summary>
+        /// using linq to get the bytes out of the hex color
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns>An array of bytes converted from hex</returns>
+        private byte[] stringToByteArray(string hex)
+        {
+            return Enumerable.Range(0, hex.Length).Where(x => x % 2 == 0).Select(x => Convert.ToByte(hex.Substring(x, 2), 16)).ToArray();
+        }
+        
 
         /// <summary>
         /// Parses the selector section of a CSS file also does so
@@ -313,14 +430,12 @@ namespace ToyBrowser.src
         private string parseIdentifier()
         {
             StringBuilder strBuilder = new StringBuilder();
-            while(!endOfFile() && (Char.IsLetterOrDigit(nextChar())||nextChar() == '-'||nextChar() == '_'))
+            while (!endOfFile() && (Char.IsLetterOrDigit(nextChar()) || nextChar() == '-' || nextChar() == '_'))
             {
                 strBuilder.Append(consumeChar());
             }
             return strBuilder.ToString();
         }
-
-        
 
         private bool validIdentifierChar(char c)
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 /// <summary>
 /// Manages all the CSS rules and is used by Parser to parse CSS
@@ -41,17 +42,48 @@ namespace ToyBrowser.src
         /// </summary>
         public struct Value
         {
-            ValueType type;
+            public ValueType type;
 
             // Keywords
-            string keyword;
+            public string keyword;
             
             // Length
-            float len;
-            Unit unit;
+            public float len;
+            public Unit unit;
             
             // Color
-            Color color;
+            public Color color;
+
+            public override string ToString()
+            {
+                StringBuilder strBuilder = new StringBuilder();
+                switch(type)
+                {
+                    case ValueType.Color:
+                        strBuilder.Append('#');
+                        byte[] data = { color.r, color.g, color.b };
+                        strBuilder.Append(BitConverter.ToString(data));
+                        break;
+                    case ValueType.Keyword:
+                        strBuilder.Append(keyword);
+                        break;
+                    case ValueType.Length:
+                        strBuilder.Append(len);
+                        switch (unit)
+                        {
+                            case Unit.P:
+                                strBuilder.Append('p');
+                                break;
+                            case Unit.Px:
+                                strBuilder.Append("px");
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                return strBuilder.ToString();
+            }
         }
 
         /// <summary>
@@ -71,6 +103,7 @@ namespace ToyBrowser.src
         public enum Unit
         {
             Px,
+            P,
             // add more units later 
         }
 
@@ -80,7 +113,7 @@ namespace ToyBrowser.src
         /// </summary>
         public struct Color
         {
-            byte r, g, b, a;
+            public byte r, g, b, a;
         }
 
         public struct Specificity
