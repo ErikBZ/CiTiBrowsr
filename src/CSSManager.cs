@@ -22,9 +22,52 @@ namespace ToyBrowser.src
 
         public struct SimpleSelector
         {
+            // will needs to change this at some point
+            // a Selector can have multiple tag names, ids
             public string tagName;
             public string id;
             public string[] classes;
+            public byte[] specificity;
+
+            public SimpleSelector(string tag, string id, string[] c)
+            {
+                this.tagName = tag;
+                this.id = id;
+                this.classes = c;
+
+                this.specificity = new byte[3]{0,0,0};
+                if (this.id.Length != 0)
+                {
+                    this.specificity[0] = 1;
+                }
+                this.specificity[1] = (byte)classes.Length;
+                if(this.tagName.Length != 0)
+                {
+                    this.specificity[2] = 1;
+                }
+            }
+
+            public override string ToString()
+            {
+                StringBuilder strBuilder = new StringBuilder();
+                if(id.Length != 0)
+                {
+                    strBuilder.Append('#');
+                    strBuilder.Append(id);
+                }
+                strBuilder.Append(' ');
+                strBuilder.Append(tagName);
+                if(classes.Length != 0)
+                {
+                    foreach (string c in classes)
+                    {
+                        strBuilder.Append('.');
+                        strBuilder.Append(c);
+                    }
+                }
+
+                return strBuilder.ToString();
+            }
         }
 
         /// <summary>
@@ -34,6 +77,15 @@ namespace ToyBrowser.src
         {
             public string name;
             public Value value;
+
+            public override string ToString()
+            {
+                StringBuilder strBuilder = new StringBuilder();
+                strBuilder.Append(name);
+                strBuilder.Append(':');
+                strBuilder.Append(value);
+                return strBuilder.ToString();
+            }
         }
 
         /// <summary>
@@ -62,7 +114,12 @@ namespace ToyBrowser.src
                     case ValueType.Color:
                         strBuilder.Append('#');
                         byte[] data = { color.r, color.g, color.b };
-                        strBuilder.Append(BitConverter.ToString(data));
+                        string str = BitConverter.ToString(data);
+                        string[] subStrings = str.Split('-');
+                        foreach(string s in subStrings)
+                        {
+                            strBuilder.Append(s);
+                        }
                         break;
                     case ValueType.Keyword:
                         strBuilder.Append(keyword);
@@ -128,6 +185,58 @@ namespace ToyBrowser.src
                 this.med = (uint)x.classes.Length;
                 this.most = (uint)x.id.Length;
             }
+        }
+
+        /// <summary>
+        /// Sorts an array of selectors by specificity.
+        /// </summary>
+        /// <param name="selectors"></param>
+        /// <returns>Returns a sorted array</returns>
+        public static SimpleSelector[] SortSelectorArray(SimpleSelector[] selectors)
+        {
+            for(int i=0;i<selectors.Length;i++)
+            {
+                bubbleUp(selectors, i);
+            }
+            return selectors;
+        }
+
+        private static void bubbleUp(SimpleSelector[] array, int exclude)
+        {
+            SimpleSelector s = array[0];
+            for(int i=0;i<array.Length - exclude;i++)
+            {
+                if(compare(s, array[i]) == 1 || compare(s, array[i]) == 0)
+                {
+                    s = array[i];
+                }
+                // swapping
+                else
+                {
+                    array[i - 1] = array[i];
+                    array[i] = s;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Compares s1 to s2
+        /// </summary>
+        /// <param name="s1"></param>
+        /// <param name="s2"></param>
+        /// <returns>-1 if s1 is less than, 0 if they're equal and 1 if s1 is bigger</returns>
+        private static int compare(SimpleSelector s1, SimpleSelector s2)
+        {
+            for(int i = 0; i<s1.specificity.Length; i++)
+            {
+                if (s1.specificity[i] > s2.specificity[i])
+                    return 1;
+                else if (s1.specificity[i] < s2.specificity[i])
+                    return -1;
+            }
+
+            // neither was bigger
+            return 0;
         }
 
         public CSSManager()

@@ -25,12 +25,23 @@ namespace ToyBrowser.src
             //    toParse = File.ReadAllText(path);
             //}
 
-            Parser parser = new Parser();
-            parser.pos = 0;
-            parser.input = "343.009";
-            float num = parser.parseStringToFloat();
-            num = num + 5;
-            Console.Write(num);
+            CSSManager.SimpleSelector s1 = new CSSManager.SimpleSelector();
+            CSSManager.SimpleSelector s2 = new CSSManager.SimpleSelector();
+            CSSManager.SimpleSelector s3 = new CSSManager.SimpleSelector();
+            CSSManager.SimpleSelector s4 = new CSSManager.SimpleSelector();
+
+            s1.specificity = new byte[3] { 0, 0, 0 };
+            s2.specificity = new byte[3] { 2, 0, 0 };
+            s3.specificity = new byte[3] { 0, 0, 4 };
+            s4.specificity = new byte[3] { 3, 0, 4 };
+
+            CSSManager.SimpleSelector[] specs = new CSSManager.SimpleSelector[4] { s1, s2, s3, s4 };
+            CSSManager.SortSelectorArray(specs);
+
+            foreach(CSSManager.SimpleSelector s in specs)
+            {
+                Console.Write(string.Format("{0} {1} {2}\n", s.specificity[0], s.specificity[1], s.specificity[2]));
+            }
             Console.Read();
 
             // program exited properly
@@ -248,8 +259,11 @@ namespace ToyBrowser.src
             return attrValue;
         }
 
+        // Evertying below this is for parsing CSS
+
+
         /// <summary>
-        /// Parses a single line as a declaration in a CSS file
+        /// Parses a single line as a declaration in a CSS 
         /// </summary>
         /// <returns></returns>
         private CSSManager.Declaration parseDeclaration()
@@ -263,7 +277,7 @@ namespace ToyBrowser.src
             consumeWhitespace();
             decl.name = parseIdentifier();
             assert(consumeChar(), ':');
-            // parse Value
+            decl.value = parseValue();
 
             return decl;
         }
@@ -318,7 +332,7 @@ namespace ToyBrowser.src
         private CSSManager.Unit parseUnit()
         {
             CSSManager.Unit u = CSSManager.Unit.Px;
-            if (startsWith("px"))
+            if (startsWith("px") || startsWith("Px") || startsWith("PX") || startsWith("pX"))
             {
                 consumeSomeChars(2);
                 u = CSSManager.Unit.Px;
